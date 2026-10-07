@@ -95,6 +95,10 @@ OptionVector parse_common_options(const OptionVector &options) {
   for (const auto &option : options) {
     if (option.first == "log_api_calls") {
       log_api_calls = bool_from_string(option.second);
+    } else if (option.first == "ort_intra_op_threads") {
+      ort_set_intra_op_threads(int32_from_string(option.second));
+    } else if (option.first == "ort_allow_spinning") {
+      ort_set_allow_spinning(bool_from_string(option.second));
     } else {
       uncommon_options.push_back(option);
     }

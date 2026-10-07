@@ -208,6 +208,7 @@ MoonshineStreamingModel::MoonshineStreamingModel(
   ort_allocator = new MoonshineOrtAllocator(ort_memory_info);
 
   LOG_ORT_ERROR(ort_api, ort_api->CreateSessionOptions(&ort_session_options));
+  ort_apply_threading_preferences(ort_api, ort_session_options);
   ort_maybe_force_single_thread(ort_api, ort_session_options);
   ort_configure_ort_file_session(ort_api, ort_session_options);
   ort_configure_execution_providers(ort_api, ort_session_options,

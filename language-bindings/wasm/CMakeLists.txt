@@ -65,11 +65,19 @@ set(_MOONSHINE_WASM_LINK_FLAGS
 # The default vendored ORT archive is built with SIMD + pthreads, so match it
 # unless the SIMD-only fallback was selected (-DMOONSHINE_WASM_SINGLE_THREAD=ON).
 if (NOT MOONSHINE_WASM_SINGLE_THREAD)
-    list(APPEND _MOONSHINE_WASM_LINK_FLAGS
-        "-pthread"
-        "-sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency"
-    )
+    list(APPEND _MOONSHINE_WASM_LINK_FLAGS "-pthread")
 endif()
 
 list(JOIN _MOONSHINE_WASM_LINK_FLAGS " " _MOONSHINE_WASM_LINK_FLAGS_STR)
 set_target_properties(moonshine_wasm PROPERTIES LINK_FLAGS "${_MOONSHINE_WASM_LINK_FLAGS_STR}")
+
+if (NOT MOONSHINE_WASM_SINGLE_THREAD)
+    # The pthread pool starts when the module loads. A caller can set
+    # `pthreadPoolSize` in the module arguments. The TypeScript layer sets it
+    # from `ort_intra_op_threads`. If it is not set, the pool has one worker
+    # for each core. target_link_options quotes the expression. LINK_FLAGS
+    # would pass it to the shell without quotes.
+    target_link_options(moonshine_wasm PRIVATE
+        "-sPTHREAD_POOL_SIZE=Module.pthreadPoolSize||navigator.hardwareConcurrency"
+    )
+endif()

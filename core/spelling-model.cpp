@@ -137,6 +137,7 @@ SpellingModel::~SpellingModel() {
 void SpellingModel::initialize_session_options() {
   LOG_ORT_ERROR(ort_api_,
                 ort_api_->CreateSessionOptions(&ort_session_options_));
+  ort_apply_threading_preferences(ort_api_, ort_session_options_);
   ort_maybe_force_single_thread(ort_api_, ort_session_options_);
   ort_configure_ort_file_session(ort_api_, ort_session_options_);
   ort_configure_execution_providers(ort_api_, ort_session_options_,

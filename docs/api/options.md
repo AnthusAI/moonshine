@@ -14,13 +14,15 @@ Use this page as the catalog of keys. Class and C API pages link here instead of
 
 ## Shared options
 
-These keys are recognized across multiple constructors. `log_api_calls` is stripped by a common parser before API-specific parsing; `ort_providers` and `coreml_cache_dir` apply wherever ONNX Runtime sessions are created.
+These keys are recognized across multiple constructors. `log_api_calls`, `ort_intra_op_threads`, and `ort_allow_spinning` are stripped by a common parser before API-specific parsing; `ort_providers` and `coreml_cache_dir` apply wherever ONNX Runtime sessions are created.
 
 | Key | Accepted by | Description |
 | --- | --- | --- |
 | `log_api_calls` | Transcriber, TTS, G2P, speech-clip extract, and other C entry points that run common option parsing | When true, log C API entry points and their arguments to stderr/console. |
 | `ort_providers` (alias `ort_provider`) | Transcriber, TTS, G2P | Comma-separated, ordered ONNX Runtime execution providers (for example `CoreML,CPU`). Names are case-insensitive; short forms (`CPU`, `CoreML`, `NNAPI`) or full names work. Unset means CPU-only (recommended). Mobile libraries ship CPU-only — requesting another provider there is an error. See [execution providers](https://github.com/moonshine-ai/moonshine/blob/main/docs/execution-providers.md). |
 | `coreml_cache_dir` | Transcriber, TTS, G2P | Directory for the CoreML compiled-model cache on macOS. Only used when `CoreML` is listed in `ort_providers`. |
+| `ort_intra_op_threads` | Any C entry point that runs common option parsing | Number of threads that each speech-to-text and spelling model uses. The default, `0`, keeps the ONNX Runtime default of one thread for each core. The setting is process-wide and applies to models that load afterward. In the browser, it also sets the size of the WASM thread pool. |
+| `ort_allow_spinning` | Any C entry point that runs common option parsing | Set to `false` to stop idle ONNX Runtime threads from waiting in a busy loop. This saves CPU while the audio is silent. If you do not set it, ONNX Runtime spins. The setting is process-wide, like `ort_intra_op_threads`. |
 | `log_profiling` | TTS, G2P | When true, log profiling information to the console. |
 | `g2p_root` | TTS, G2P (and TTS dependency/voice listing) | Asset root for G2P and TTS file layout. Empty means the process current working directory. |
 | `path_root` / `model_root` | Same as `g2p_root` | Aliases for `g2p_root`. |

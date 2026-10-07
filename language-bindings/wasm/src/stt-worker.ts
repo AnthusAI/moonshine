@@ -7,6 +7,7 @@
 
 import { Transcriber } from './transcriber.js';
 import { ModelArch } from './enums.js';
+import { moduleOptionsForNativeOptions } from './module.js';
 import type { Stream } from './stream.js';
 import type { TranscriptEventListener } from './events.js';
 import type { TranscriptLine } from './types.js';
@@ -70,9 +71,10 @@ async function loadTranscriber(msg: Extract<SttWorkerRequest, { type: 'loadTrans
   for (let i = 0; i < msg.optionNames.length; i++) {
     options[msg.optionNames[i]!] = msg.optionValues[i]!;
   }
-  const moduleOptions = {
-    locateFile: (path: string) => new URL(path, msg.wasmBaseUrl).href,
-  };
+  const moduleOptions = moduleOptionsForNativeOptions(
+    { locateFile: (path: string) => new URL(path, msg.wasmBaseUrl).href },
+    options,
+  );
   const onProgress = (loaded: number, total: number | undefined, file: string) => {
     reply({
       type: 'progress',

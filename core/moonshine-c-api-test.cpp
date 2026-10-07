@@ -502,6 +502,8 @@ TEST_CASE("moonshine-test-v2") {
         {"return_audio_data", "false"},
         {"log_output_text", "true"},
         {"ort_providers", "CPU"},
+        {"ort_intra_op_threads", "2"},
+        {"ort_allow_spinning", "false"},
         {"coreml_cache_dir", "/tmp/moonshine-coreml-cache"},
         {"keyterms", "Kubernetes, Anushka Sharma"},
         {"keyterm_boost", "4.0"},

@@ -18,7 +18,7 @@
 
 import { AssetDownloader } from './asset-downloader.js';
 import { ModelArch, TranscribeFlags } from './enums.js';
-import { MoonshineError } from './errors.js';
+import { MoonshineError, MoonshineInvalidArgumentError } from './errors.js';
 import type { TranscriptEventListener } from './events.js';
 import { Stream } from './stream.js';
 import { Transcriber, type TranscriberLoadOptions } from './transcriber.js';
@@ -57,6 +57,7 @@ export class MicTranscriber {
   private modelSource?: string | Record<string, string>;
   private constraints: MediaTrackConstraints | boolean = true;
   private flags: TranscribeFlags = TranscribeFlags.None;
+  private nativeOptions: Record<string, string> = {};
 
   private readonly listeners: TranscriptEventListener[] = [];
   private textCallbacks: Array<(text: string) => void> = [];
@@ -99,6 +100,30 @@ export class MicTranscriber {
   useTranscriber(transcriber: Transcriber): this {
     this.transcriber = transcriber;
     this.ownsTranscriber = false;
+    return this;
+  }
+
+  /**
+   * Limits the number of threads that speech-to-text uses. This also sets the
+   * size of the WASM thread pool. The default is one thread for each core. The
+   * first module load on a page sets the pool size, so call this before
+   * anything else loads.
+   */
+  threads(count: number): this {
+    if (!Number.isInteger(count) || count < 1) {
+      throw new MoonshineInvalidArgumentError(`threads must be a positive integer, got ${count}`);
+    }
+    this.nativeOptions.ort_intra_op_threads = String(count);
+    return this;
+  }
+
+  /**
+   * Sets whether idle speech-to-text threads wait for work in a busy loop.
+   * ONNX Runtime does this by default, which uses CPU while the audio is
+   * silent. Pass `false` to stop it.
+   */
+  allowSpinning(enabled: boolean): this {
+    this.nativeOptions.ort_allow_spinning = String(enabled);
     return this;
   }
 
@@ -157,6 +182,7 @@ export class MicTranscriber {
       this.transcriber = await Transcriber.loadFromUrls(this.modelSource, {
         modelArch: this.arch,
         onProgress,
+        options: this.loadOptions(),
       });
       return this;
     }
@@ -169,8 +195,13 @@ export class MicTranscriber {
         ? new AssetDownloader({ onProgress, baseUrl: this.modelSource })
         : undefined,
       onProgress,
+      options: this.loadOptions(),
     } as TranscriberLoadOptions);
     return this;
+  }
+
+  private loadOptions(): Record<string, string> | undefined {
+    return Object.keys(this.nativeOptions).length ? { ...this.nativeOptions } : undefined;
   }
 
   /**

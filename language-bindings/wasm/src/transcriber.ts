@@ -10,6 +10,7 @@ import { ModelArch, TranscribeFlags, modelArchToString } from './enums.js';
 import { MoonshineInvalidArgumentError, wrapErrors } from './errors.js';
 import {
   loadMoonshineModule,
+  moduleOptionsForNativeOptions,
   type LoadModuleOptions,
   type MoonshineModule,
   type RawTranscriber,
@@ -162,7 +163,11 @@ export class Transcriber {
    * browser has no natural filesystem.
    */
   static async load(options: TranscriberLoadOptions): Promise<Transcriber> {
-    const module = options.module ?? (await loadMoonshineModule(options.moduleOptions));
+    const module =
+      options.module ??
+      (await loadMoonshineModule(
+        moduleOptionsForNativeOptions(options.moduleOptions, options.options),
+      ));
 
     if (isFromBytes(options)) {
       const files = new Map<string, Uint8Array>([
@@ -229,7 +234,10 @@ export class Transcriber {
     options: TranscriberFromUrlsOptions = {},
   ): Promise<Transcriber> {
     const module =
-      options.module ?? (await loadMoonshineModule(options.moduleOptions));
+      options.module ??
+      (await loadMoonshineModule(
+        moduleOptionsForNativeOptions(options.moduleOptions, options.options),
+      ));
     const downloader =
       options.downloader ??
       new AssetDownloader({ onProgress: options.onProgress });

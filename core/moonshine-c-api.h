@@ -410,6 +410,9 @@ MOONSHINE_EXPORT const char *moonshine_transcript_to_string(
    iOS and Android libraries ship with no other choice — see
    docs/execution-providers.md), and ``coreml_cache_dir`` (directory for the
    CoreML compiled model cache on macOS).
+   ``ort_intra_op_threads`` (int, default 0 for one thread for each core) and
+   ``ort_allow_spinning`` (bool, the ONNX Runtime default is true) apply to
+   all models that load afterward; see docs/api/options.md.
    Pass ``use_speculative_decoding`` (bool, default true) to control
    speculative re-decode of the previous hypothesis on streaming updates
    (set false to fall back to greedy redecode from BOS).

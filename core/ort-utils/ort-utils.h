@@ -115,6 +115,24 @@ OrtStatus *ort_run(const OrtApi *ort_api, OrtSession *session,
 void ort_maybe_force_single_thread(const OrtApi *ort_api,
                                    OrtSessionOptions *session_options);
 
+// Process-wide threading settings for the ONNX Runtime sessions of the
+// speech-to-text and spelling models. They come from the
+// ``ort_intra_op_threads`` and ``ort_allow_spinning`` common options. They
+// apply to sessions that are created after you set them.
+//
+// intra_op_threads: 0 or less keeps the ONNX Runtime default, which is one
+// thread for each core.
+// allow_spinning: when true, idle threads wait for work in a busy loop. ONNX
+// Runtime does this by default. It uses CPU while a stream is silent.
+void ort_set_intra_op_threads(int32_t intra_op_threads);
+void ort_set_allow_spinning(bool allow_spinning);
+
+// Applies the settings above to one session. Call it right after
+// CreateSessionOptions and before ort_maybe_force_single_thread, so that the
+// single-thread override still wins.
+void ort_apply_threading_preferences(const OrtApi *ort_api,
+                                     OrtSessionOptions *session_options);
+
 // Session flags for already-optimized .ort files loaded via mmap +
 // CreateSessionFromArray. use_ort_model_bytes_directly keeps ORT on the
 // mapped bytes instead of copying the weight buffer at load; disable_prepacking

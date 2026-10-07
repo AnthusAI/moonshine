@@ -251,6 +251,21 @@ new AgentFlow().audioConstraints(audio);
 voiceClone.fromMicrophone({ audioConstraints: audio });
 ```
 
+### Threads and CPU while listening
+
+The threaded build starts one worker for each core. Idle ONNX Runtime workers
+wait for work in a busy loop, which uses CPU while the page listens. To use
+less CPU, limit the threads and turn spinning off:
+
+```js
+const mic = new MicTranscriber().threads(2).allowSpinning(false);
+```
+
+`threads(n)` sets the `ort_intra_op_threads` option. It also sets the size of
+the WASM thread pool. The module loads one time for each page or worker, so the
+first load sets the pool size. `Transcriber.load` accepts the same options:
+`{ options: { ort_intra_op_threads: '2', ort_allow_spinning: 'false' } }`.
+
 ### Making sure you're running your rebuild
 
 When iterating on the binding it's easy to wonder whether the browser is running

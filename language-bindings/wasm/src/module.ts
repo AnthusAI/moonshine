@@ -132,6 +132,38 @@ export interface LoadModuleOptions {
   locateFile?: (path: string, scriptDirectory: string) => string;
   /** Provide the Emscripten factory directly (e.g. a custom bundling setup). */
   factory?: EmscriptenFactory;
+  /**
+   * Number of pthread workers that the module starts with. The default is one
+   * for each core (`navigator.hardwareConcurrency`). The module loads one time
+   * for each page or worker, so the first load sets the size. Transcribers set
+   * this from their `ort_intra_op_threads` option.
+   */
+  threadPoolSize?: number;
+}
+
+/**
+ * Returns the thread pool size that these native options need: one worker for
+ * each `ort_intra_op_threads`. The pool then does not grow on demand.
+ */
+export function threadPoolSizeForOptions(
+  options: Record<string, string> | undefined,
+): number | undefined {
+  const value = options?.ort_intra_op_threads;
+  if (value === undefined) return undefined;
+  const threads = Number.parseInt(value, 10);
+  return Number.isInteger(threads) && threads > 0 ? threads : undefined;
+}
+
+/** Sets {@link LoadModuleOptions.threadPoolSize} from the native options if it is not set. */
+export function moduleOptionsForNativeOptions(
+  moduleOptions: LoadModuleOptions | undefined,
+  options: Record<string, string> | undefined,
+): LoadModuleOptions | undefined {
+  const threadPoolSize = threadPoolSizeForOptions(options);
+  if (threadPoolSize === undefined || moduleOptions?.threadPoolSize !== undefined) {
+    return moduleOptions;
+  }
+  return { ...moduleOptions, threadPoolSize };
 }
 
 type EmscriptenFactory = (opts?: Record<string, unknown>) => Promise<MoonshineModule>;
@@ -204,6 +236,10 @@ async function emscriptenModuleArgs(
 
   if (options.locateFile) {
     moduleArgs.locateFile = options.locateFile;
+  }
+
+  if (options.threadPoolSize !== undefined) {
+    moduleArgs.pthreadPoolSize = options.threadPoolSize;
   }
 
   if (isCrossOrigin(mjsUrl)) {

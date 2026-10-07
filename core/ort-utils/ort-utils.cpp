@@ -1,5 +1,6 @@
 #include "ort-utils.h"
 
+#include <atomic>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -108,6 +109,36 @@ int ort_session_from_memory(const OrtApi *ort_api, OrtEnv *env,
       ort_api, ort_api->CreateSessionFromArray(env, data, data_size,
                                                session_options, session));
   return 0;
+}
+
+namespace {
+std::atomic<int32_t> preferred_intra_op_threads{0};
+// -1 keeps the ONNX Runtime default. 0 and 1 are explicit choices.
+std::atomic<int32_t> preferred_allow_spinning{-1};
+}  // namespace
+
+void ort_set_intra_op_threads(int32_t intra_op_threads) {
+  preferred_intra_op_threads.store(intra_op_threads);
+}
+
+void ort_set_allow_spinning(bool allow_spinning) {
+  preferred_allow_spinning.store(allow_spinning ? 1 : 0);
+}
+
+void ort_apply_threading_preferences(const OrtApi *ort_api,
+                                     OrtSessionOptions *session_options) {
+  const int32_t intra_op_threads = preferred_intra_op_threads.load();
+  if (intra_op_threads > 0) {
+    LOG_ORT_ERROR(ort_api, ort_api->SetIntraOpNumThreads(session_options,
+                                                         intra_op_threads));
+  }
+  const int32_t allow_spinning = preferred_allow_spinning.load();
+  if (allow_spinning >= 0) {
+    LOG_ORT_ERROR(ort_api,
+                  ort_api->AddSessionConfigEntry(
+                      session_options, "session.intra_op.allow_spinning",
+                      allow_spinning == 1 ? "1" : "0"));
+  }
 }
 
 void ort_maybe_force_single_thread(const OrtApi *ort_api,

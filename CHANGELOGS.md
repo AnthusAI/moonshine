@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.1.6]
 
+### Added
+
+- `ort_intra_op_threads` and `ort_allow_spinning` options limit the speech-to-text threads and stop idle threads from spinning. In the browser, `MicTranscriber.threads()` also sets the WASM thread pool size.
+
 ### Fixed
 
 - Voice activity detection no longer carries its recurrent state between streams, which made a new or concurrent stream score its first second against audio it never heard.
